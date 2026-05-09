@@ -1,9 +1,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PatientRecord, Outbreak } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+// Lazy initialization of the AI client
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY is not defined in the environment.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
+  }
+  return aiInstance;
+}
 
 export async function getStrategicInsights(records: PatientRecord[], outbreak: Outbreak | null) {
+  const ai = getAI();
   const prompt = `
     Analyze the following rural health clinic data and provide a high-level strategic problem-solving plan.
     Current Records: ${JSON.stringify(records.slice(-10))}
@@ -48,7 +61,11 @@ export async function getStrategicInsights(records: PatientRecord[], outbreak: O
       }
     });
 
-    return JSON.parse(response.text);
+    if (!response.text) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    return JSON.parse(response.text.trim());
   } catch (error) {
     console.error("Gemini strategic insight error:", error);
     return null;
@@ -56,6 +73,7 @@ export async function getStrategicInsights(records: PatientRecord[], outbreak: O
 }
 
 export async function generateHealthInsight(record: PatientRecord) {
+  const ai = getAI();
   const prompt = `
     Conduct a clinical reasoning analysis for the following triage record:
     Age: ${record.age}
@@ -88,7 +106,11 @@ export async function generateHealthInsight(record: PatientRecord) {
       }
     });
 
-    return JSON.parse(response.text);
+    if (!response.text) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    return JSON.parse(response.text.trim());
   } catch (error) {
     console.error("Gemini insight error:", error);
     return null;
