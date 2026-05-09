@@ -1,6 +1,6 @@
 import { Card, Badge, Button } from './UI';
 import { PatientRecord } from '../types';
-import { Search, Filter, Eye, User, Calendar } from 'lucide-react';
+import { Search, Filter, Eye, User, Calendar, Activity } from 'lucide-react';
 import { useState } from 'react';
 
 interface PatientTableProps {
@@ -27,33 +27,15 @@ export default function PatientTable({ records, onView }: PatientTableProps) {
     <Card className="flex flex-col h-full bg-white shadow-sm border-slate-200">
       <div className="h-12 border-b border-slate-200 flex items-center justify-between px-4 bg-slate-50/50 shrink-0">
         <div className="flex items-center gap-2">
-           <Filter size={14} className="text-emerald-600" />
+           <Activity size={14} className="text-emerald-600" />
            <h3 className="text-[11px] font-black text-slate-700 uppercase tracking-widest">Active Registry</h3>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="relative group">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search ID/Condition..." 
-              className="pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded text-[10px] font-bold outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500/50 w-40 transition-all"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded px-2">
-            <Filter size={10} className="text-slate-400" />
-            <select 
-              className="py-1.5 bg-transparent border-none text-[10px] font-black outline-none cursor-pointer uppercase tracking-tighter"
-              value={filter}
-              onChange={e => setFilter(e.target.value as any)}
-            >
-              <option value="all">View All</option>
-              <option value="high">High Risk Only</option>
-              <option value="moderate">Moderate Only</option>
-              <option value="low">Low Risk Only</option>
-            </select>
-          </div>
+        <div className="flex items-center gap-4">
+           <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-slate-400 uppercase">Live Stream</span>
+           </div>
+           <Badge variant="default" className="text-[9px] font-black border-slate-200">{filtered.length} RECORDS</Badge>
         </div>
       </div>
 

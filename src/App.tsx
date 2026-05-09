@@ -11,12 +11,13 @@ import PatientTable from './components/PatientTable';
 import OutbreakGuidance from './components/OutbreakGuidance';
 import { Card, Button } from './components/UI';
 import OutbreakSurveillance from './components/OutbreakSurveillance';
-import { Activity, Plus, LayoutDashboard, Search, Settings, Shield, Menu, X, Heart, AlertTriangle } from 'lucide-react';
+import AIStrategicAdvisor from './components/AIStrategicAdvisor';
+import { Activity, Plus, LayoutDashboard, Search, Settings, Shield, Menu, X, Heart, AlertTriangle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const [records, setRecords] = useLocalStorage<PatientRecord[]>('health_records', []);
-  const [view, setView] = useState<'dashboard' | 'form' | 'reports' | 'surveillance'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'form' | 'reports' | 'surveillance' | 'advisor'>('dashboard');
   const [selectedRecord, setSelectedRecord] = useState<PatientRecord | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -126,6 +127,7 @@ export default function App() {
             <NavItem id="dashboard" icon={LayoutDashboard} label="Command Hub" />
             <NavItem id="reports" icon={Search} label="Registry" />
             <NavItem id="surveillance" icon={Shield} label="Surveillance" />
+            <NavItem id="advisor" icon={Sparkles} label="Strategic Advisor" />
             
             <div className="pt-4 pb-2 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Assessment</div>
             <button
@@ -210,6 +212,12 @@ export default function App() {
               <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-full flex flex-col gap-6">
                 {currentOutbreak && <OutbreakGuidance outbreak={currentOutbreak} />}
                 <OutbreakSurveillance records={records} />
+              </motion.div>
+            )}
+
+            {view === 'advisor' && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="h-full flex flex-col">
+                 <AIStrategicAdvisor records={records} outbreak={currentOutbreak} />
               </motion.div>
             )}
           </div>

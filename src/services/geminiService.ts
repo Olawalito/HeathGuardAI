@@ -1,27 +1,23 @@
-import { GoogleGenAI } from "@google/genai";
-import { PatientRecord, HealthInsight } from "../types";
+import { GoogleGenAI, Type } from "@google/genai";
+import { PatientRecord, Outbreak } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
-export async function generateHealthInsight(record: PatientRecord): Promise<HealthInsight> {
+export async function getStrategicInsights(records: PatientRecord[], outbreak: Outbreak | null) {
   const prompt = `
-    As a medical decision support assistant for community health workers in rural settings, analyze this patient record:
-    Age: ${record.age}
-    Symptoms: Fever ${record.symptoms.fever}, Cough ${record.symptoms.cough}, Breathing Difficulty: ${record.symptoms.breathingDifficulty ? 'Yes' : 'No'}, Fatigue: ${record.symptoms.fatigue}, Appetite: ${record.symptoms.appetite}
-    Additional Notes: ${record.notes || 'None'}
-    Risk Level: ${record.riskLevel} (${record.riskScore}/100)
-    Likely Risk Categories: ${record.likelyConditions.join(', ')}
+    Analyze the following rural health clinic data and provide a high-level strategic problem-solving plan.
+    Current Records: ${JSON.stringify(records.slice(-10))}
+    Active Outbreak: ${outbreak ? JSON.stringify(outbreak) : 'None detected'}
 
-    Provide a summary in simple, human-friendly language. 
-    Explain the possible risk clearly.
-    Suggest next steps for the health worker.
-    
-    IMPORTANT: Do NOT provide a diagnosis. Ensure the tone is supportive and clear. Keep it short.
-    Return the response in JSON format matching this schema:
+    Format your response in JSON with the following structure:
     {
-      "summary": "string",
-      "riskExplanation": "string",
-      "nextSteps": ["string"]
+      "summary": "Brief executive summary of the current health landscape",
+      "criticalAlerts": ["Alert 1", "Alert 2"],
+      "strategicPlan": [
+        { "title": "Priority 1", "action": "Specific problem solving action" },
+        { "title": "Priority 2", "action": "Specific problem solving action" }
+      ],
+      "resourceOptimization": "How to best use limited resources (meds, staff, etc)"
     }
   `;
 
@@ -31,18 +27,70 @@ export async function generateHealthInsight(record: PatientRecord): Promise<Heal
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-      },
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING },
+            criticalAlerts: { type: Type.ARRAY, items: { type: Type.STRING } },
+            strategicPlan: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  action: { type: Type.STRING }
+                }
+              }
+            },
+            resourceOptimization: { type: Type.STRING }
+          }
+        }
+      }
     });
 
-    const text = response.text;
-    if (!text) throw new Error("Empty response from Gemini");
-    return JSON.parse(text) as HealthInsight;
+    return JSON.parse(response.text);
   } catch (error) {
-    console.error("AI Insight Error:", error);
-    return {
-      summary: "Unable to generate AI insight at this moment.",
-      riskExplanation: "The system encountered an error analyzing the record.",
-      nextSteps: ["Proceed with standard triage protocols.", "Consult with a supervisor if unsure."]
-    };
+    console.error("Gemini strategic insight error:", error);
+    return null;
+  }
+}
+
+export async function generateHealthInsight(record: PatientRecord) {
+  const prompt = `
+    Conduct a clinical reasoning analysis for the following triage record:
+    Age: ${record.age}
+    Symptoms: ${JSON.stringify(record.symptoms)}
+    Likely Conditions: ${record.likelyConditions.join(', ')}
+    Risk Level: ${record.riskLevel}
+
+    Format your response in JSON:
+    {
+      "summary": "High-level diagnostic summary",
+      "riskExplanation": "Why this risk level was assigned",
+      "nextSteps": ["Step 1", "Step 2", "Step 3"]
+    }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING },
+            riskExplanation: { type: Type.STRING },
+            nextSteps: { type: Type.ARRAY, items: { type: Type.STRING } }
+          }
+        }
+      }
+    });
+
+    return JSON.parse(response.text);
+  } catch (error) {
+    console.error("Gemini insight error:", error);
+    return null;
   }
 }
